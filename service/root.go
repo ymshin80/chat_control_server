@@ -3,7 +3,9 @@ package service
 import (
 	"chat_golang_control/repository"
 	"chat_golang_control/types/table"
+	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -35,6 +37,21 @@ func (s *Service) loopSubKafka() {
 
 		switch event := ev.(type) {
 		case *kafka.Message :
+			type ServerInfoData struct {
+				IP string
+				Status bool
+			}
+
+			var decoder ServerInfoData
+
+			if err := json.Unmarshal(event.Value, &decoder); err != nil {
+				log.Println("Failed to Decoding:", event.Value)
+			} else {
+				log.Println(decoder)
+
+				s.AvgServerList[decoder.IP] = decoder.Status
+			}
+
 			fmt.Println(event)
 		case *kafka.Error:
 			fmt.Println("failed to pooling event", event.Error())
